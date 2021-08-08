@@ -1,0 +1,23 @@
+{
+  "name": "email-campaign-csv-generator",
+  "version": "1.0.0",
+  "description": "Electron email campaign generator desktop app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package-mac": "electron-packager . 'Email Campaign CSV Generator' --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
+    "package-win": "electron-packager . --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Email Campaign CSV Generator\"",
+    "package-linux": "electron-packager . --overwrite --platform=linux --arch=x64 --icon=assets/icons/png/icon.png --prune=true --out=release-builds"
+  },
+  "author": "Fikri Amri",
+  "license": "ISC",
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "html-minifier": "^4.0.0"
+  },
+  "devDependencies": {
+    "electron": "^1.8.8",
+    "electron-packager": "^15.3.0"
+  }
+}

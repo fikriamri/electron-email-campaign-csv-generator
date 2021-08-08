@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Email Campaign CSV Generator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-wrapper">
+      <a class="brand-logo center" style="font-size: 2rem;">Email Campaign CSV Generator</a>   
+    </div>
+    <div class="center">
+      <button class="blue" id="btnFolder">Choose Folder</button>
+      <p style="color:black" id="folderSelectedPreview">
+        <b style="color:black">Selected Folder:</b>
+      </p>
+    </div>
+    <div class="center">
+      <button class="blue" id="btnSourceFile">Choose Source File</button>
+      <p style="color:black" id="sourceFilePreview">
+        <b style="color:black">Selected Source File:</b>
+      </p>
+    </div>
+    <div class="center">
+      <p style="color:black" id="sourceFilePreview">
+        <b style="color:black">Subject Name:</b>
+        <input type="text" id="subjectName">
+      </p>
+    </div>
+    <div class="center">
+      <button class="blue" id="btnHTMLSource">Choose HTML Source</button>
+      <p style="color:black" id="HTMLSourcePreview">
+        <b style="color:black">Selected HTML source:</b>
+      </p>
+    </div>
+    <div class="center">
+      <button class="blue" id="generate">Generate</button>
+    </div>
+  </nav>
+  <ul></ul>
+
+  <script>
+    const electron = require('electron');
+    const {ipcRenderer} = electron;
+    const ul = document.querySelector('ul');
+    const csvGeneratorV2 = require('./csvGeneratorV2');
+    const htmlMinifier = require('./htmlMinifier');
+    const { dialog } = electron.remote;
+    const { shell } = require('electron');
+
+    ipcRenderer.on('item:add', function(e, item){
+      ul.className = 'collection';
+      const li = document.createElement('li');
+      li.className = 'collection-item';
+      const itemText = document.createTextNode(item);
+
+      li.appendChild(itemText);
+      ul.appendChild(li);
+    });
+
+    ipcRenderer.on('item:clear', function(){
+      ul.className = '';
+      ul.innerHTML = '';
+    });
+
+    ul.addEventListener('dblclick', removeItem);
+
+    function removeItem(e){
+      event.target.remove();
+      if(ul.children.length == 0){
+        ul.className = '';
+      }
+    }
+
+    let folderSelected;
+    let sourceFile;
+    const folderSelectedPreview = document.querySelector('#folderSelectedPreview');
+    const sourceFilePreview = document.querySelector('#sourceFilePreview');
+    const HTMLSourcePreview = document.querySelector('#HTMLSourcePreview');
+    let htmlResult;
+
+    document.querySelector('#btnFolder').addEventListener('click', () => {
+        folderSelected = dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory']})[0];
+
+        const arrayOfFolderSelected = folderSelected.split('/');
+        folderSelectedPreview.innerHTML = '<b style="color:black">Selected Folder:&nbsp;</b>';
+        folderSelectedPreview.appendChild(document.createTextNode(arrayOfFolderSelected[arrayOfFolderSelected.length - 1]));
+    })
+
+    document.querySelector('#btnSourceFile').addEventListener('click', () => {
+        sourceFile = dialog.showOpenDialog(
+          { 
+            properties: ['openFile'],
+            filters: [{ name: 'CSV files', extensions: ['csv'] },]
+          }
+        )[0];
+
+        const arrayOfSourceFile = sourceFile.split('/');
+        sourceFilePreview.innerHTML = '<b style="color:black">Selected Source File:&nbsp;</b>';
+        sourceFilePreview.appendChild(document.createTextNode(arrayOfSourceFile[arrayOfSourceFile.length - 1]));
+    })
+
+    document.querySelector('#btnHTMLSource').addEventListener('click', () => {
+        HTMLSource = dialog.showOpenDialog(
+          { 
+            properties: ['openFile'],
+            filters: [{ name: 'HTML files', extensions: ['html'] },]
+          }
+        )[0];
+
+        const arrayOfHTMLSource = HTMLSource.split('/');
+        HTMLSourcePreview.innerHTML = '<b style="color:black">Selected HTML Source:&nbsp;</b>';
+        HTMLSourcePreview.appendChild(document.createTextNode(arrayOfHTMLSource[arrayOfHTMLSource.length - 1]));
+        htmlResult = htmlMinifier(HTMLSource)
+    })
+
+    document.querySelector('#generate').addEventListener('click', async () => {
+        await csvGeneratorV2(folderSelected, sourceFile, document.getElementById("subjectName").value, htmlResult);
+        shell.showItemInFolder(folderSelected);
+        folderSelected = '';
+        sourceFile = '';
+        folderSelectedPreview.innerHTML = '<b style="color:black">Selected Folder:&nbsp;</b>';
+        sourceFilePreview.innerHTML = '<b style="color:black">Selected Source File:&nbsp;</b>';
+        HTMLSourcePreview.innerHTML = '<b style="color:black">Selected HTML Source:&nbsp;</b>';
+        document.getElementById("subjectName").value = '';
+    })
+  </script>
+</body>
+</html>
